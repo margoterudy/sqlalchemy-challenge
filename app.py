@@ -20,11 +20,11 @@ Base.prepare(engine, reflect=True)
 
 
 # # #Tables
-# Measurement = Base.classes.measurement
-# # Station = Base.classes.station
+Measurement = Base.classes.measurement
+Station = Base.classes.station
 
-# # Create Session (Link) From Python to the DB
-# session = Session(engine)
+ # Create Session (Link) From Python to the DB
+session = Session(engine)
 
 #############################
 # Flask Setup
@@ -46,24 +46,43 @@ def Home():
 
     )
 
-# #B Precipitation
+#B Precipitation
 # @app.route("/api/v1.0/precipitation")
 # def percipitation():
+#     session = Session(engine)
+
+
    
 
 
 
-# #C Stations
-# @app.route("/api/v1.0/stations")
-# def stations():
+#C Stations
+@app.route("/api/v1.0/stations")
+def stations():
+    session = Session(engine)
+    sel = [Station.station,Station.name,Station.latitude,Station.longitude,Station.elevation]
+    queryresult = session.query(*sel).all()
+    session.close()
+
+    stations = []
+    for station,name,lat,lon,el in queryresult:
+        station_dict = {}
+        station_dict["Station"] = station
+        station_dict["Name"] = name
+        station_dict["Lat"] = lat
+        station_dict["Lon"] = lon
+        station_dict["Elevation"] = el
+        stations.append(station_dict)
+
+    return jsonify(stations)
 
 
-# #D tobs
-# @app.route("/api/v1.0/tobs")
-# def tobs():
+#D tobs
+@app.route("/api/v1.0/tobs")
+def tobs():
 
 
-# #E Return a JSON lists
+#E Return a JSON lists
 
 
 # Step 3 Run code from command line
