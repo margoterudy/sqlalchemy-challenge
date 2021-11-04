@@ -19,11 +19,11 @@ Base = automap_base()
 Base.prepare(engine, reflect=True)
 
 
-# # #Tables
+#Tables
 Measurement = Base.classes.measurement
 Station = Base.classes.station
 
- # Create Session (Link) From Python to the DB
+# Create Session (Link) From Python to the DB
 session = Session(engine)
 
 #############################
@@ -47,10 +47,26 @@ def Home():
     )
 
 #B Precipitation
-# @app.route("/api/v1.0/precipitation")
-# def percipitation():
-#     session = Session(engine)
+@app.route("/api/v1.0/precipitation")
+def precipitation():
 
+
+    # Query Measurement
+    results = (session.query(Measurement.date, Measurement.tobs)
+                      .order_by(Measurement.date))
+    
+    # Create a dictionary
+    precipitation_date_tobs = []
+    for each_row in results:
+        dt_dict = {}
+        dt_dict["date"] = each_row.date
+        dt_dict["tobs"] = each_row.tobs
+        precipitation_date_tobs.append(dt_dict)
+
+    return jsonify(precipitation_date_tobs)
+    
+# Close the session
+session.close()
 
    
 
@@ -59,27 +75,26 @@ def Home():
 #C Stations
 @app.route("/api/v1.0/stations")
 def stations():
+    # Create session (link) from Python to the DB
     session = Session(engine)
-    sel = [Station.station,Station.name,Station.latitude,Station.longitude,Station.elevation]
-    queryresult = session.query(*sel).all()
-    session.close()
 
-    stations = []
-    for station,name,lat,lon,el in queryresult:
-        station_dict = {}
-        station_dict["Station"] = station
-        station_dict["Name"] = name
-        station_dict["Lat"] = lat
-        station_dict["Lon"] = lon
-        station_dict["Elevation"] = el
-        stations.append(station_dict)
+    # Query Stations
+    results = session.query(Station.name).all()
 
-    return jsonify(stations)
+    # Convert list of tuples into normal list
+    station_details = list(np.ravel(results))
+
+    return jsonify(station_details)
 
 
-#D tobs
-@app.route("/api/v1.0/tobs")
-def tobs():
+# Close the session
+session.close()
+
+
+
+# #D tobs
+# @app.route("/api/v1.0/tobs")
+# def tobs():
 
 
 #E Return a JSON lists
