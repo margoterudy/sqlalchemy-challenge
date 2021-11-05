@@ -143,15 +143,16 @@ def get_t_start(start):
         filter(Measurement.date >= start).all()
     session.close()
 
-    tobsall = []
+    tobs_list = []
     for min,avg,max in queryresult:
-        tobs_dict = {}
-        tobs_dict["Min"] = min
-        tobs_dict["Average"] = avg
-        tobs_dict["Max"] = max
-        tobsall.append(tobs_dict)
+        line = {}
+        line["Min"] = min
+        line["Average"] = avg
+        line["Max"] = max
+        tobs_list.append(line)
+        
 
-    return jsonify(tobsall)
+    return jsonify(tobs_list)
 
 # Close the session
 session.close()
@@ -164,15 +165,16 @@ def get_t_start_stop(start,stop):
         filter(Measurement.date >= start).filter(Measurement.date <= stop).all()
     session.close()
 
-    tobsall = []
+    tobs_list = []
     for min,avg,max in queryresult:
-        tobs_dict = {}
-        tobs_dict["Min"] = min
-        tobs_dict["Average"] = avg
-        tobs_dict["Max"] = max
-        tobsall.append(tobs_dict)
+        line = {}
+        line["Min"] = min
+        line["Average"] = avg
+        line["Max"] = max
+        tobs_list.append(line)
 
-    return jsonify(tobsall)
+    return jsonify(tobs_list)
+
 # Close the session
 session.close()
 
