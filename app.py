@@ -12,6 +12,7 @@ import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, func
+from sqlalchemy.sql import exists  
 
 #############################
 # Database Setup
@@ -44,6 +45,7 @@ def Home():
         f"/api/v1.0/precipitation<br/>"
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
+        f"/api/v1.0/start<br/>"
         f"/api/v1.0/temp/start/end"
     )
 
@@ -134,6 +136,56 @@ def tobs():
 session.close()
 
 #When given the start only, calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date.
+@app.route("/api/v1.0/<start>") 
+def start_only(start):
+
+    # Create session (link) from Python to the DB
+    session = Session(engine)
+
+    # Date Range (only for help to user in case date gets entered wrong)
+    date_range_max = session.query(Measurement.date).order_by(Measurement.date.desc()).first()
+    date_range_max_str = str(date_range_max)
+    date_range_max_str = re.sub("'|,", "",date_range_max_str)
+    print (date_range_max_str)
+
+    date_range_min = session.query(Measurement.date).first()
+    date_range_min_str = str(date_range_min)
+    date_range_min_str = re.sub("'|,", "",date_range_min_str)
+    print (date_range_min_str)
+
+
+    # Checking for validity of entry of start date
+    valid = session.query(exists().where(Measurement.date == start)).scalar()
+ 
+    if valid:
+
+    	results = (session.query(func.min(Measurement.tobs)
+    				 ,func.avg(Measurement.tobs)
+    				 ,func.max(Measurement.tobs))
+    				 	  .filter(Measurement.date >= start).all())
+
+    	tmin =results[0][0]
+    	tavg ='{0:.4}'.format(results[0][1])
+    	tmax =results[0][2]
+    
+    	result_printout =( ['Entered Start Date: ' + start,
+    						'The lowest Temperature was: '  + str(tmin) + ' F',
+    						'The average Temperature was: ' + str(tavg) + ' F',
+    						'The highest Temperature was: ' + str(tmax) + ' F'])
+    	return jsonify(result_printout)
+
+    return jsonify({"error": f"Input Date {start} not valid. Date Range is {date_range_min_str} to {date_range_max_str}"}), 404
+# Close the session
+session.close()
+
+#When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive.
+@app.route("/api/v1.0/<start>/<end>")
+def start_end(start, end):
+
+    # Create session
+    session = Session(engine)
+
+    
 
 
   
