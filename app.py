@@ -45,8 +45,7 @@ def Home():
         f"/api/v1.0/precipitation<br/>"
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
-        f"/api/v1.0/start<br/>"
-        f"/api/v1.0/temp/start/end"
+        f"/api/v1.0/start/end"
     )
 
 #B Precipitation
@@ -65,10 +64,12 @@ def precipitation():
         dt_dict["tobs"] = each_row.tobs
         precipitation_date_tobs.append(dt_dict)
 
+    # Close the session
+    session.close()
+
     return jsonify(precipitation_date_tobs)
     
-# Close the session
-session.close()
+
 
 
 #C Stations
@@ -83,10 +84,11 @@ def stations():
     # Convert list of tuples into normal list
     station_details = list(np.ravel(results))
 
+    # Close the session
+    session.close()
+
     return jsonify(station_details)
 
-# Close the session
-session.close()
 
 
  #D tobs
@@ -131,42 +133,47 @@ def tobs():
         line["Temperature"] = int(result[2])
         tobs_list.append(line)
 
+    # Close the session
+    session.close()
+
     return jsonify(tobs_list)
-# Close the session
-session.close()
+
 
 #When given the start only, calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date.
 @app.route('/api/v1.0/<start>')
 def get_t_start(start):
     session = Session(engine)
-    queryresult = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+    queryresult =  session.query(Measurement.date, func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
         filter(Measurement.date >= start).all()
+        
     session.close()
 
+
+
     tobs_list = []
-    for min,avg,max in queryresult:
+    for date,min,avg,max in queryresult:
         line = {}
         line["Min"] = min
         line["Average"] = avg
         line["Max"] = max
         tobs_list.append(line)
-        
 
+
+  
     return jsonify(tobs_list)
 
-# Close the session
-session.close()
+
 
 #When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive.
 @app.route('/api/v1.0/<start>/<stop>')
 def get_t_start_stop(start,stop):
     session = Session(engine)
-    queryresult = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
-        filter(Measurement.date >= start).filter(Measurement.date <= stop).all()
+    queryresult = session.query(Measurement.date, func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs))\
+        .filter(Measurement.date >= start).filter(Measurement.date <= stop).all()
     session.close()
 
     tobs_list = []
-    for min,avg,max in queryresult:
+    for date,min,avg,max in queryresult:
         line = {}
         line["Min"] = min
         line["Average"] = avg
