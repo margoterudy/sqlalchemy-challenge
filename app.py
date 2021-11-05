@@ -4,6 +4,8 @@ from flask import Flask, jsonify
 #Import numpy and datetime
 import numpy as np
 import datetime as dt
+from datetime import timedelta
+import re
 
 # Import Dependencies Python SQL toolkit and Object Relational Mapper
 import sqlalchemy
@@ -43,13 +45,11 @@ def Home():
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
         f"/api/v1.0/temp/start/end"
-
     )
 
 #B Precipitation
 @app.route("/api/v1.0/precipitation")
 def precipitation():
-
 
     # Query Measurement
     results = (session.query(Measurement.date, Measurement.tobs)
@@ -68,9 +68,6 @@ def precipitation():
 # Close the session
 session.close()
 
-   
-
-
 
 #C Stations
 @app.route("/api/v1.0/stations")
@@ -86,17 +83,60 @@ def stations():
 
     return jsonify(station_details)
 
-
 # Close the session
 session.close()
 
 
+ #D tobs
+@app.route("/api/v1.0/tobs")
+def tobs():
+    # Create session from Python to the Database
+    session = Session(engine)
 
-# #D tobs
-# @app.route("/api/v1.0/tobs")
-# def tobs():
+    # Query Measurements for latest date and calculate query_start_date
+    latest_date = (session.query(Measurement.date)
+                          .order_by(Measurement.date
+                          .desc())
+                          .first())
+    
+    latest_date_str = str(latest_date)
+    latest_date_str = re.sub("'|,", "",latest_date_str)
+    latest_date_obj = dt.datetime.strptime(latest_date_str, '(%Y-%m-%d)')
+    query_start_date = dt.date(latest_date_obj.year, latest_date_obj.month, latest_date_obj.day) - dt.timedelta(days=366)
+     
+    # Query station names and their observation counts sorted desc. and select most active station
+    query_station_list = (session.query(Measurement.station, func.count(Measurement.station))
+                             .group_by(Measurement.station)
+                             .order_by(func.count(Measurement.station).desc())
+                             .all())
+    
+    station = query_station_list[0][0]
+    print(station)
 
 
+    # Return a list of tobs for the year prior to the final date
+    results = (session.query(Measurement.station, Measurement.date, Measurement.tobs)
+                      .filter(Measurement.date >= query_start_date)
+                      .filter(Measurement.station == station)
+                      .all())
+
+    # Create JSON results
+    tobs_list = []
+    for result in results:
+        line = {}
+        line["Date"] = result[1]
+        line["Station"] = result[0]
+        line["Temperature"] = int(result[2])
+        tobs_list.append(line)
+
+    return jsonify(tobs_list)
+# Close the session
+session.close()
+
+#When given the start only, calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date.
+
+
+  
 #E Return a JSON lists
 
 
